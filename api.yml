@@ -1,0 +1,431 @@
+openapi: 3.0.3
+info:
+  title: SawitPro Test
+  version: 1.0.0
+  contact: {}
+servers:
+- url: '{{base_url}}'
+x-validator-tags:
+  not-null-vtag: &not-null-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "required"
+  phone_number-vtag: &phone_number-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "required,stringlength(12|15),phone-number-pattern"
+  full_name-vtag: &full_name-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "required,stringlength(3|60)"
+  password-vtag: &password-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "required,stringlength(6|64),has-number,has-lower-case,has-upper-case,has-special-character"
+  registration_type-vtag: &registration_type-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "required,in(phone_number)"
+  update-full_name-vtag: &update-full_name-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "stringlength(3|60)"
+  update-phone_number-vtag: &update-phone_number-vtag
+    x-oapi-codegen-extra-tags:
+      valid: "stringlength(12|15),phone-number-pattern"
+paths:
+  /register:
+    post:
+      summary: Registration
+      description: Registration
+      operationId: registration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - full_name
+                - password
+                - principal
+                - registration_type
+              properties:
+                full_name:
+                  type: string
+                  example: Al Rayan
+                  <<: *full_name-vtag
+                password:
+                  type: string
+                  example: Password!
+                  <<: *password-vtag
+                principal:
+                  type: string
+                  example: '+6281212341234'
+                  <<: *phone_number-vtag
+                registration_type:
+                  type: string
+                  example: phone_number
+                  <<: *registration_type-vtag
+            examples:
+              Registration:
+                value:
+                  full_name: Al Rayan
+                  password: Password!
+                  principal: '+6281212341234'
+                  registration_type: phone_number
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/RegisterResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      user_id: c596887d-0514-4aa7-9fdd-6474f794e3ab
+                    message: user registered successfully
+                    request_id: c596887d-0514-4aa7-9fdd-6474f794e3ab
+                    status: success
+        '400':
+          description: error - validation failed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdErrResponse'
+              examples:
+                error - validation failed:
+                  value:
+                    code: invalid_param
+                    data:
+                      detail:
+                      - field: principal
+                        message: '"principal" should be 10 to 13 characters'
+                        path:
+                        - principal
+                    message: '400: invalid_param'
+                    request_id: c596887d-0514-4aa7-9fdd-6474f794e3ab
+                    status: failed
+        '409':
+          description: error - already registered user (conflict)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdErrResponse'
+                  - properties:
+                    data:
+                      $ref: '##/components/schemas/StdErrData'
+              examples:
+                error - already registered user (conflict):
+                  value:
+                    code: user_registered
+                    data:
+                      detail:
+                      - field: principal
+                        message: user "+6281212341234" is already registered
+                        path:
+                        - principal
+                    message: '409: user_registered'
+                    request_id: c596887d-0514-4aa7-9fdd-6474f794e3ab
+                    status: failed
+  /login:
+    post:
+      summary: Authentication
+      description: Authentication
+      operationId: authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+                - principal
+                - registration_type
+              properties:
+                password:
+                  type: string
+                  example: Password1!
+                  <<: *not-null-vtag
+                principal:
+                  type: string
+                  example: '+6281212341234'
+                  <<: *not-null-vtag
+                registration_type:
+                  type: string
+                  example: phone_number
+                  <<: *registration_type-vtag
+            examples:
+              Authentication:
+                value:
+                  password: Password1!
+                  principal: '+6281212341234'
+                  registration_type: phone_number
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/LoginResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                            example: ZQixAJEqCUyyIVbOjGLoS14IPbmObMLDm9plvOwIS9sNMqBxDzSo2SF9uFZsSIofoh0k0enVIJuZNMh6k8BQoY4FTxDyR+HLyRXBwhGh6Zslg+VSZgSRtLuk66499W2CAZ2PYfNz5vL0NlZdZGGBjHwTE2zL10vBFI57u3Df0dCi
+                          expires_in:
+                            type: integer
+                            example: 60
+                          token_type:
+                            type: string
+                            example: Bearer
+              examples:
+                success:
+                  value:
+                    data:
+                      access_token: ZQixAJEqCUyyIVbOjGLoS14IPbmObMLDm9plvOwIS9sNMqBxDzSo2SF9uFZsSIofoh0k0enVIJuZNMh6k8BQoY4FTxDyR+HLyRXBwhGh6Zslg+VSZgSRtLuk66499W2CAZ2PYfNz5vL0NlZdZGGBjHwTE2zL10vBFI57u3Df0dCi
+                      expires_in: 60
+                      refresh_token: xEJFH3A92x1/6i9c2BSDBlL8jlTVn8ZXd/fLg+smkAQj
+                      token_type: Bearer
+                    message: successfully authenticating user
+                    request_id: 12996178-5b33-444a-9562-58678aa5a66d
+                    status: success
+        '400':
+          description: error - wrong password
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdErrResponse'
+              examples:
+                error - wrong password:
+                  value:
+                    code: invalid_param
+                    data:
+                      detail:
+                      - field: password
+                        message: invalid user/password
+                        path: []
+                    message: '422: invalid_param'
+                    requestId: ce479515-cd94-4924-8c9a-c049645bba61
+                    status: failed
+  /user-info:
+    get:
+      summary: Get My Profile
+      description: Get My Profile
+      operationId: getMyProfile
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdResponse'
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          full_name:
+                            type: string
+                            example: Al Rayan
+                          phone_number:
+                            type: string
+                            example: '+6281212341234'
+                          registration_type:
+                            type: string
+                            example: 'phone_number'
+              examples:
+                success:
+                  value:
+                    data:
+                      full_name: Al Rayan
+                      principal: '+6281212341234'
+                    message: null
+                    request_id: 12996178-5b33-444a-9562-58678aa5a66d
+                    status: success
+        '403':
+          description: error - invalid jwt
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdErrResponse'
+              examples:
+                error - invalid jwt:
+                  value:
+                    code: forbidden
+                    data:
+                      detail:
+                      - field: Authorization
+                        message: invalid authorization token
+                        path: []
+                    message: '403: forbidden'
+                    requestId: ce479515-cd94-4924-8c9a-c049645bba61
+                    status: failed
+      security:
+      - bearerAuth: []
+    put:
+      summary: Update My Profile
+      description: Update My Profile
+      operationId: updateMyProfile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                  example: Al Rayan
+                  <<: *update-full_name-vtag
+                phone_number:
+                  type: string
+                  example: '+6281212341234'
+                  <<: *update-phone_number-vtag
+            examples:
+              Update My Profile:
+                value:
+                  full_name: Al Rayan
+                  password: Password!
+                  principal: '+6281212341234'
+                  registration_type: phone_number
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdResponse'
+                  - properties:
+                      data:
+                        $ref: '#/components/schemas/UserInfoResponse'
+              examples:
+                success:
+                  value:
+                    data:
+                      full_name: Al Rayan
+                      principal: '+6281212341234'
+                    message: successfully updating user information
+                    request_id: 12996178-5b33-444a-9562-58678aa5a66d
+                    status: success
+        '403':
+          description: error - invalid jwt
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdErrResponse'
+              examples:
+                error - invalid jwt:
+                  value:
+                    code: forbidden
+                    data:
+                      detail:
+                      - field: Authorization
+                        message: invalid authorization token
+                        path: []
+                    message: '403: forbidden'
+                    requestId: ce479515-cd94-4924-8c9a-c049645bba61
+                    status: failed
+        '409':
+          description: error - already registered user (conflict)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/StdErrResponse'
+              examples:
+                error - already registered user (conflict):
+                  value:
+                    code: user_registered
+                    data:
+                      detail:
+                      - field: principal
+                        message: user "+6281212341234" is already used
+                        path:
+                        - principal
+                    message: '409: user_registered'
+                    request_id: c596887d-0514-4aa7-9fdd-6474f794e3ab
+                    status: failed
+components:
+  schemas:
+    StdResponse:
+      type: object
+      required:
+        - status
+        - request_id
+        - message
+        - data
+      properties:
+        status:
+          type: string
+          x-order: 1
+        request_id:
+          type: string
+          x-order: 2
+        message:
+          type: string
+          x-order: 3
+        data:
+          x-oapi-codegen-type: interface{}
+          x-order: 5
+    StdErrResponse:
+      allOf:
+        - $ref: '#/components/schemas/StdResponse'
+        - required:
+          - code
+        - properties:
+            code:
+              x-order: 4
+              type: string
+            data:
+              x-oapi-codegen-type: interface{}
+    RegisterResponse:
+      type: object
+      required:
+        - user_id
+      properties:
+        user_id:
+          type: string
+          example: c596887d-0514-4aa7-9fdd-6474f794e3ab
+    LoginResponse:
+      type: object
+      required:
+        - access_token
+        - expires_in
+        - token_type
+      properties:
+        access_token:
+          type: string
+          example: ZQixAJEqCUyyIVbOjGLoS14IPbmObMLDm9plvOwIS9sNMqBxDzSo2SF9uFZsSIofoh0k0enVIJuZNMh6k8BQoY4FTxDyR+HLyRXBwhGh6Zslg+VSZgSRtLuk66499W2CAZ2PYfNz5vL0NlZdZGGBjHwTE2zL10vBFI57u3Df0dCi
+        expires_in:
+          type: integer
+          example: 60
+        token_type:
+          type: string
+          example: Bearer
+    UserInfoResponse:
+      type: object
+      required:
+        - full_name
+        - principal
+      properties:
+        full_name:
+          type: string
+          example: Al Rayan
+        principal:
+          type: string
+          example: '+6281212341234'
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+tags: []
+
