@@ -8,12 +8,16 @@ import (
 )
 
 const (
-	ErrInsertUserSQLStmt          = "000001"
-	ErrInsertUserScan             = "000002"
-	ErrInsertUserCommit           = "000003"
-	ErrGetPasswordByUserIDSQLStmt = "000004"
-	ErrGetPasswordByUserIDScan    = "000005"
-	ErrAuthSignString             = "000006"
+	ErrInsertUserSQLStmt = "000001"
+	ErrInsertUserScan    = "000002"
+	ErrInsertUserCommit  = "000003"
+	ErrAuthDataSQLStmt   = "000004"
+	ErrGetAuthDataScan   = "000005"
+	ErrAuthSignString    = "000006"
+	ErrUpdateUserSQLStmt = "000007"
+	ErrUpdateUserScan    = "000008"
+	ErrGetUserSQLStmt    = "000009"
+	ErrGetUserScan       = "000010"
 )
 
 type ServerError struct {

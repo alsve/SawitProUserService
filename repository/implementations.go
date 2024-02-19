@@ -91,7 +91,7 @@ func (r *Repository) UpdateUser(ctx context.Context, input UpdateUserInput) (out
 		fmt.Sprintf(`UPDATE public."user" SET %s WHERE id = $%d RETURNING phone_number, full_name`, setFragments, count+1),
 	)
 	if err != nil {
-		return nil, stderr.NewServerError(stderr.ErrGetPasswordByUserIDSQLStmt, err)
+		return nil, stderr.NewServerError(stderr.ErrUpdateUserSQLStmt, err)
 	}
 	defer stmt.Close()
 
@@ -102,7 +102,7 @@ func (r *Repository) UpdateUser(ctx context.Context, input UpdateUserInput) (out
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			return nil, stderr.NewConflictRequest("phone number has been registered")
 		}
-		return nil, stderr.NewServerError(stderr.ErrGetPasswordByUserIDScan, err)
+		return nil, stderr.NewServerError(stderr.ErrUpdateUserScan, err)
 	}
 
 	return output, nil
@@ -117,7 +117,7 @@ func (r *Repository) GetUser(ctx context.Context, input GetUserInput) (output *G
 		`SELECT phone_number, full_name FROM public."user" WHERE id = $1`,
 	)
 	if err != nil {
-		return nil, stderr.NewServerError(stderr.ErrGetPasswordByUserIDSQLStmt, err)
+		return nil, stderr.NewServerError(stderr.ErrGetUserSQLStmt, err)
 	}
 	defer stmt.Close()
 
@@ -128,7 +128,7 @@ func (r *Repository) GetUser(ctx context.Context, input GetUserInput) (output *G
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, stderr.NewBadRequest("no such user")
 		}
-		return nil, stderr.NewServerError(stderr.ErrGetPasswordByUserIDScan, err)
+		return nil, stderr.NewServerError(stderr.ErrGetUserScan, err)
 	}
 
 	return output, nil
@@ -143,7 +143,7 @@ func (r *Repository) GetAuthData(ctx context.Context, input GetAuthDataInput) (o
 		`SElECT u.id, uc.method, uc.hash, uc.salt FROM public."user" u JOIN public."user_credential" uc ON u.id = uc.user_id WHERE uc.method = 'bcrypt' and u.phone_number = $1`,
 	)
 	if err != nil {
-		return nil, stderr.NewServerError(stderr.ErrGetPasswordByUserIDSQLStmt, err)
+		return nil, stderr.NewServerError(stderr.ErrAuthDataSQLStmt, err)
 	}
 	defer stmt.Close()
 
@@ -154,7 +154,7 @@ func (r *Repository) GetAuthData(ctx context.Context, input GetAuthDataInput) (o
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, stderr.NewBadRequest("wrong user/password")
 		}
-		return nil, stderr.NewServerError(stderr.ErrGetPasswordByUserIDScan, err)
+		return nil, stderr.NewServerError(stderr.ErrGetAuthDataScan, err)
 	}
 
 	return output, nil
